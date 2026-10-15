@@ -9,6 +9,7 @@ export type EvidenceType =
   | 'tab_switch'
   | 'face'
   | 'latency'
+  | 'answer'
 
 export type RecommendedAction = 'proceed' | 'manual_review' | 'reject'
 
@@ -43,7 +44,7 @@ export interface EvidenceEvent {
   description: string
   transcript?: string
   /** 0–1 model confidence for this event */
-  confidence: number
+  confidence?: number
 }
 
 export interface Recommendation {
@@ -53,6 +54,8 @@ export interface Recommendation {
 }
 
 export interface InterviewRiskResult {
+  /** Structured evidence is required; legacy scores are never trusted by the dashboard. */
+  analysisInput?: InterviewAnalysisInput
   sessionId: string
   candidate: {
     name: string
@@ -75,6 +78,33 @@ export interface InterviewRiskResult {
   factors: ExplanationFactor[]
   events: EvidenceEvent[]
   recommendation: Recommendation
+}
+
+export type PositiveCriterion = 'relevance' | 'own_words' | 'experience_consistency' | 'follow_up' | 'reasoning'
+export type NegativeCriterion = 'contradiction' | 'repeated_unrelated' | 'experience_mismatch' | 'cannot_explain_material'
+export type AssistanceCriterion = 'visible_device' | 'prohibited_notes' | 'material_with_failed_follow_up' | 'approved_proctoring'
+export type CommunicationCriterion = 'frequent_pauses' | 'uneven_pace' | 'unsteady_delivery' | 'self_reported_nervousness'
+export interface AnalysisEvidence {
+  id: string
+  timestampSec: number
+  source: 'transcript' | 'video' | 'interviewer' | 'approved_proctoring'
+  detail: string
+}
+export interface AnalysisFinding<Criterion extends string> {
+  criterion: Criterion
+  status: 'observed' | 'not_observed' | 'not_evaluated'
+  explanation: string
+  evidenceIds: string[]
+  /** Required for contradictions, repeated responses, and failed follow-ups. */
+  relatedEvidenceIds?: string[]
+}
+export interface InterviewAnalysisInput {
+  evidence: AnalysisEvidence[]
+  positive: AnalysisFinding<PositiveCriterion>[]
+  negative: AnalysisFinding<NegativeCriterion>[]
+  externalAssistance: AnalysisFinding<AssistanceCriterion>[]
+  communication: AnalysisFinding<CommunicationCriterion>[]
+  interviewRules: { notesProhibited: boolean; proctoringApproved: boolean }
 }
 
 export interface ReviewerDecisionPayload {

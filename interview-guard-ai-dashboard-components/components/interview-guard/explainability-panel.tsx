@@ -36,14 +36,14 @@ export function ExplainabilityPanel({
           Why this score?
         </h2>
         <p className="text-sm text-slate-500">
-          How much each factor raised or lowered the score, starting from the base rate. Select
-          a factor for details.
+          Each supported negative answer criterion adds 25 review points. Positive evidence,
+          communication observations, and external assistance are assessed separately.
         </p>
       </div>
 
       <div className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 text-sm">
         <div className="flex flex-col">
-          <span className="text-xs text-slate-500">Base rate</span>
+          <span className="text-xs text-slate-500">Starting points</span>
           <span className="font-mono font-semibold tabular-nums text-slate-900">{baseScore}</span>
         </div>
         <div className="h-px flex-1 bg-slate-300" aria-hidden="true" />
@@ -64,6 +64,7 @@ export function ExplainabilityPanel({
       </div>
 
       <ul className="flex flex-col gap-1" aria-label="Contributing factors">
+        {factors.length === 0 && <li className="py-3 text-sm text-slate-600">No supported negative answer criteria. See evidence coverage above; missing evidence is not a clear result.</li>}
         {sorted.map((factor) => {
           const positive = factor.contribution >= 0
           const width = (Math.abs(factor.contribution) / maxAbs) * 100
@@ -119,10 +120,10 @@ export function ExplainabilityPanel({
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span className="flex items-center gap-1.5">
           <TrendingDown className="size-3.5 text-emerald-600" aria-hidden="true" />
-          Lowers risk
+          Fewer review points
         </span>
         <span className="flex items-center gap-1.5">
-          Raises risk
+          More review points
           <TrendingUp className="size-3.5 text-rose-600" aria-hidden="true" />
         </span>
       </div>

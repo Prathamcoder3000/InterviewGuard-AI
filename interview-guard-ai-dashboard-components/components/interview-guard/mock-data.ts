@@ -1,214 +1,50 @@
-import type { InterviewRiskResult } from './types'
+import type { InterviewAnalysisInput, InterviewRiskResult } from './types'
+import { applyAnalysisPolicy } from './analysis-policy'
 
-export const sampleRiskResult: InterviewRiskResult = {
-  sessionId: 'IG-2026-10-4821',
-  candidate: {
-    name: 'Jordan Ellis',
-    role: 'Senior Backend Engineer',
-  },
+// Fictional, explicitly labeled demo evidence. Never attached to a local recording.
+export const sampleAnalysisInput: InterviewAnalysisInput = {
+  interviewRules: { notesProhibited: false, proctoringApproved: false },
+  evidence: [
+    { id: 'q1', timestampSec: 40, source: 'transcript', detail: 'Interviewer: What is a Python dictionary? Candidate: A mapping from keys to values. In our API I used one to count requests by customer ID.' },
+    { id: 'q2', timestampSec: 92, source: 'transcript', detail: 'Interviewer: Why use a dictionary for counts? Candidate: I can look up the existing count by key, increment it, and store it back. A list would require searching for each customer.' },
+    { id: 'experience', timestampSec: 15, source: 'interviewer', detail: 'Candidate claims experience implementing Python APIs and request counters. The dictionary example is consistent with that specific claim; other claimed skills have not been assessed.' },
+    { id: 'q3', timestampSec: 160, source: 'transcript', detail: 'Interviewer: Are Python lists mutable? Candidate: No, a list cannot be changed after it is created.' },
+    { id: 'q4', timestampSec: 205, source: 'transcript', detail: 'Interviewer: What happens when append is called on an existing list? Candidate: It modifies the same list in place. The earlier statement was not explained or reconciled during this demo.' },
+    { id: 'delivery', timestampSec: 92, source: 'interviewer', detail: 'The dictionary explanation was correct and relevant. The candidate paused several times and spoke at an uneven pace. No inference about emotion, honesty, or identity was made.' },
+    { id: 'device', timestampSec: 260, source: 'video', detail: 'Fictional demo observation: the candidate visibly scrolls on another device. Its content and purpose are unknown. Interview rules did not prohibit reference notes; unauthorized assistance cannot be established.' },
+  ],
+  positive: [
+    { criterion: 'relevance', status: 'observed', explanation: 'The dictionary answers address the questions asked.', evidenceIds: ['q1', 'q2'] },
+    { criterion: 'own_words', status: 'observed', explanation: 'The candidate describes the counting approach using a concrete work example.', evidenceIds: ['q1', 'q2'] },
+    { criterion: 'experience_consistency', status: 'observed', explanation: 'The API counter example is consistent with the specific Python experience claim reviewed.', evidenceIds: ['experience', 'q1'] },
+    { criterion: 'follow_up', status: 'observed', explanation: 'The candidate independently explains why a dictionary fits the counting task.', evidenceIds: ['q2'] },
+    { criterion: 'reasoning', status: 'observed', explanation: 'The answer explains lookup and increment operations and compares them with list searching.', evidenceIds: ['q2'] },
+  ],
+  negative: [
+    { criterion: 'contradiction', status: 'observed', explanation: 'The two statements about list mutability conflict. Ask a targeted follow-up; this does not establish dishonesty.', evidenceIds: ['q3'], relatedEvidenceIds: ['q4'] },
+  ],
+  externalAssistance: [
+    { criterion: 'visible_device', status: 'observed', explanation: 'A separate device is visibly used in the fictional video example. Its purpose requires verification; unauthorized help is not established.', evidenceIds: ['device'] },
+  ],
+  communication: [
+    { criterion: 'frequent_pauses', status: 'observed', explanation: 'Pauses coexist with a correct technical explanation. They add zero review points.', evidenceIds: ['delivery'] },
+    { criterion: 'uneven_pace', status: 'observed', explanation: 'Uneven pace is a communication observation, separate from technical correctness and excluded from risk scoring.', evidenceIds: ['delivery'] },
+  ],
+}
+
+export const sampleRiskResult: InterviewRiskResult = applyAnalysisPolicy({
+  sessionId: 'IG-DEMO-2026-10-4821',
+  candidate: { name: 'Jordan Ellis', role: 'Backend Engineer' },
   interviewer: 'Priya Natarajan',
   conductedAt: '2026-10-14T15:30:00Z',
-  durationSec: 2580,
-  overallScore: 78,
-  riskLevel: 'high',
-  confidence: 0.87,
-  baseScore: 12,
-  modelVersion: 'guard-v2.3.1',
-  summary:
-    'Several signals point to outside help during the system design section (18:00–31:00). The candidate looked off-screen to the same spot again and again, a second voice was heard twice, and two answers closely match LLM-generated text. The coding section showed nothing unusual.',
-  signals: [
-    {
-      id: 'gaze',
-      label: 'Off-screen gaze pattern',
-      category: 'behavioral',
-      score: 84,
-      weight: 0.24,
-      description:
-        '14 fixations toward the lower-right of the screen, lasting 2–6s each and timed with the start of answers.',
-    },
-    {
-      id: 'ai-similarity',
-      label: 'AI-generated answer similarity',
-      category: 'content',
-      score: 81,
-      weight: 0.22,
-      description:
-        'Two answers scored above 0.9 semantic similarity to LLM output, with unusually even structure.',
-    },
-    {
-      id: 'voice',
-      label: 'Secondary voice detected',
-      category: 'audio',
-      score: 68,
-      weight: 0.2,
-      description:
-        'Two segments with a second speaker at low volume, separated from the candidate by speaker diarization.',
-    },
-    {
-      id: 'latency',
-      label: 'Response latency anomaly',
-      category: 'behavioral',
-      score: 57,
-      weight: 0.14,
-      description:
-        'Pauses before answers averaged 7.8s on hard questions and 1.9s on easy ones, a pattern consistent with looking up answers.',
-    },
-    {
-      id: 'tab',
-      label: 'Browser focus changes',
-      category: 'environment',
-      score: 42,
-      weight: 0.12,
-      description: '3 brief focus-loss events recorded by the interview client.',
-    },
-    {
-      id: 'face',
-      label: 'Face presence & identity',
-      category: 'environment',
-      score: 8,
-      weight: 0.08,
-      description:
-        'One face throughout, consistent with the ID photo. No extra faces detected.',
-    },
-  ],
-  factors: [
-    {
-      id: 'f1',
-      feature: 'Gaze fixations aligned with answer onset',
-      contribution: 22,
-      detail: 'Strongest single driver. The pattern holds across 9 of 12 questions.',
-    },
-    {
-      id: 'f2',
-      feature: 'LLM similarity on system design answers',
-      contribution: 19,
-      detail: 'Q7 and Q9 answers match common LLM phrasing and structure.',
-    },
-    {
-      id: 'f3',
-      feature: 'Secondary speaker segments',
-      contribution: 15,
-      detail: 'Diarization confidence was 0.82 and 0.76 for the two segments.',
-    },
-    {
-      id: 'f4',
-      feature: 'Latency gap by question difficulty',
-      contribution: 9,
-      detail: 'Hard questions took 4.1x longer to start than the peer baseline.',
-    },
-    {
-      id: 'f5',
-      feature: 'Browser focus loss',
-      contribution: 6,
-      detail: 'Short events (<3s) carry low weight on their own.',
-    },
-    {
-      id: 'f6',
-      feature: 'Consistent identity verification',
-      contribution: -3,
-      detail: 'Face matched the ID throughout the session.',
-    },
-    {
-      id: 'f7',
-      feature: 'Natural coding-section behavior',
-      contribution: -2,
-      detail: 'Live coding showed normal typing rhythm and self-correction.',
-    },
-  ],
-  events: [
-    {
-      id: 'e1',
-      timestampSec: 312,
-      type: 'tab_switch',
-      severity: 'low',
-      title: 'Browser lost focus',
-      description: 'Interview window lost focus for 1.8s.',
-      confidence: 0.99,
-    },
-    {
-      id: 'e2',
-      timestampSec: 1104,
-      durationSec: 6,
-      type: 'gaze',
-      severity: 'medium',
-      title: 'Sustained off-screen gaze',
-      description: 'Fixation toward lower-right lasting 6s at the start of Q6.',
-      confidence: 0.81,
-    },
-    {
-      id: 'e3',
-      timestampSec: 1268,
-      durationSec: 4,
-      type: 'audio',
-      severity: 'high',
-      title: 'Second speaker detected',
-      description: 'Low-volume second voice heard right after Q7 was asked.',
-      transcript: '[unidentified speaker, low volume] "...consistent hashing, mention the ring..."',
-      confidence: 0.82,
-    },
-    {
-      id: 'e4',
-      timestampSec: 1302,
-      durationSec: 95,
-      type: 'ai_text',
-      severity: 'critical',
-      title: 'Answer matches LLM output',
-      description: 'Q7 answer has 0.93 semantic similarity to generated reference answers.',
-      transcript:
-        '"To design this, I would use consistent hashing to distribute keys across nodes, which minimizes remapping when nodes join or leave. Additionally, we can introduce virtual nodes to ensure a more uniform distribution..."',
-      confidence: 0.91,
-    },
-    {
-      id: 'e5',
-      timestampSec: 1540,
-      durationSec: 11,
-      type: 'latency',
-      severity: 'medium',
-      title: 'Unusual response delay',
-      description: '11s pause before answering Q8, against a 2.1s baseline for this candidate.',
-      confidence: 0.7,
-    },
-    {
-      id: 'e6',
-      timestampSec: 1712,
-      durationSec: 3,
-      type: 'audio',
-      severity: 'high',
-      title: 'Second speaker detected',
-      description: 'Whispered speech overlapping the candidate\u2019s answer.',
-      transcript: '[unidentified speaker, whisper] "...say eventual consistency..."',
-      confidence: 0.76,
-    },
-    {
-      id: 'e7',
-      timestampSec: 1760,
-      durationSec: 80,
-      type: 'ai_text',
-      severity: 'high',
-      title: 'Answer matches LLM output',
-      description: 'Q9 answer has 0.90 semantic similarity, with a list-heavy structure.',
-      transcript:
-        '"There are several key trade-offs to consider. First, consistency versus availability. Second, latency versus durability. Finally, operational complexity..."',
-      confidence: 0.86,
-    },
-    {
-      id: 'e8',
-      timestampSec: 1866,
-      type: 'tab_switch',
-      severity: 'medium',
-      title: 'Browser lost focus',
-      description: 'Two focus-loss events within 20s.',
-      confidence: 0.99,
-    },
-  ],
-  recommendation: {
-    action: 'manual_review',
-    rationale:
-      'Several independent signals line up in the same time window, which makes coincidence unlikely. Combined risk is high but below the auto-reject threshold of 85, so a human should review before any decision is made.',
-    nextSteps: [
-      'Watch the recording from 18:00 to 31:00, focusing on Q7 and Q9.',
-      'Schedule a short live follow-up on consistent hashing and CAP trade-offs.',
-      'Confirm the candidate\u2019s room setup in the follow-up session.',
-    ],
-  },
-}
+  durationSec: 360,
+  overallScore: 0,
+  riskLevel: 'low',
+  confidence: 0,
+  baseScore: 0,
+  modelVersion: 'answer-review-rubric-v1',
+  summary: '',
+  signals: [], factors: [], events: [],
+  recommendation: { action: 'manual_review', rationale: '', nextSteps: [] },
+  analysisInput: sampleAnalysisInput,
+})
