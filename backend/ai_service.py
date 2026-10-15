@@ -170,9 +170,10 @@ INTERVIEW CONTENT:
 
 Evaluate each of the claimed skills according to the system instructions. Return valid JSON only."""
 
-        # Use gemini-2.5-flash for speed and structured outputs
+        # Allow model override or default to active Gemini model (gemini-3.8-flash)
+        model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=model_name,
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
@@ -183,23 +184,55 @@ Evaluate each of the claimed skills according to the system instructions. Return
 
         raw_text = response.text or "{}"
         parsed = json.loads(raw_text)
+        if not isinstance(parsed, dict):
+            parsed = {}
 
         raw_skills = parsed.get("skill_analysis", [])
+        if not isinstance(raw_skills, list):
+            raw_skills = []
         contradictions = parsed.get("contradictions", [])
+        if not isinstance(contradictions, list):
+            contradictions = []
         follow_ups = parsed.get("follow_up_questions", [])
+        if not isinstance(follow_ups, list):
+            follow_ups = []
 
         results: List[SkillAnalysis] = []
+        parsed_by_skill = {}
         for item in raw_skills:
-            assessment = str(item.get("assessment", "insufficient_evidence")).lower()
-            if assessment not in ["demonstrated", "partial", "not_demonstrated", "insufficient_evidence"]:
-                assessment = "insufficient_evidence"
+            if not isinstance(item, dict):
+                continue
+            skill_name = str(item.get("skill", "")).strip()
+            if skill_name:
+                parsed_by_skill[skill_name.lower()] = item
 
-            results.append(SkillAnalysis(
-                skill=item.get("skill", "General"),
-                assessment=assessment,
-                evidence=item.get("evidence", "Evidence analyzed from response transcript."),
-                confidence=float(item.get("confidence", 0.75))
-            ))
+        for skill in request.claimed_skills:
+            skill_clean = skill.strip().lower()
+            item = parsed_by_skill.get(skill_clean)
+            if item:
+                assessment = str(item.get("assessment", "insufficient_evidence")).strip().lower()
+                if assessment not in ["demonstrated", "partial", "not_demonstrated", "insufficient_evidence"]:
+                    assessment = "insufficient_evidence"
+
+                try:
+                    conf = float(item.get("confidence", 0.75))
+                    conf = max(0.0, min(1.0, conf))
+                except (ValueError, TypeError):
+                    conf = 0.75
+
+                results.append(SkillAnalysis(
+                    skill=skill,
+                    assessment=assessment,
+                    evidence=str(item.get("evidence", "Evidence analyzed from interview responses.")),
+                    confidence=conf
+                ))
+            else:
+                results.append(SkillAnalysis(
+                    skill=skill,
+                    assessment="insufficient_evidence",
+                    evidence=f"Skill '{skill}' was not directly addressed in Gemini AI assessment.",
+                    confidence=0.4
+                ))
 
         # Check if insufficient evidence overall
         is_insufficient = len(results) == 0 or all(r.assessment == "insufficient_evidence" for r in results)
