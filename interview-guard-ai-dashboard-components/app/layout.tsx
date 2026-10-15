@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Risk Results | InterviewGuard AI',
-  description: 'See the risk score for an interview, the evidence behind it, and record a reviewer decision.',
+  title: 'Candidate Evaluations | InterviewGuard AI',
+  description: 'Review candidate skills, compare interview evidence, and inspect individual technical assessments.',
   generator: 'v0.app',
   icons: {
     icon: [

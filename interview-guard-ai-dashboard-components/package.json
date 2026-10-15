@@ -4,15 +4,16 @@
   "private": true,
   "packageManager": "pnpm@12.3.4",
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "node scripts/prepare-face-models.mjs && next dev --webpack",
+    "build": "node scripts/prepare-face-models.mjs && next build --webpack",
     "typecheck": "tsc --noEmit",
-    "test": "node --test hooks/use-interview-recorder.test.cjs components/interview-guard/analysis-policy.test.cjs",
+    "test": "node --test hooks/use-interview-recorder.test.cjs hooks/use-face-analysis.test.cjs hooks/voice.test.cjs components/interview-guard/analysis-policy.test.cjs lib/face-analysis-policy.test.cjs lib/candidate-evaluations.test.cjs",
     "start": "next start"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@vercel/analytics": "1.6.1",
+    "@vladmandic/face-api": "1.7.15",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",

@@ -13,6 +13,9 @@ __v0_jsx-dev-runtime.ts
 # Common ignores
 node_modules
 .next/
+.next-validation/
+public/models/face/
+!lib/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store

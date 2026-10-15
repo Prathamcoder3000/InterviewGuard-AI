@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # Load environment configuration from .env
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 from schemas import (
     CandidateAnalysisRequest,
@@ -17,6 +17,7 @@ from schemas import (
 from ai_service import analyze_candidate_transcript
 from scoring import compute_risk_score
 from resume_parser import ParseResumeResponse, ResumeError, extract_text, parse_resume_text, MAX_BYTES
+from interviewer import router as interviewer_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,6 +39,7 @@ app = FastAPI(
     description="Fair, objective interview consistency and skill review-support API",
     lifespan=lifespan
 )
+app.include_router(interviewer_router)
 
 # Configure CORS for frontend access
 origins = [

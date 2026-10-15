@@ -4,11 +4,11 @@ import { useCallback, useRef, useState } from 'react'
 import {
   analyzeCandidate,
   parseResume,
-  toRiskResult,
   type ParsedResume,
 } from './api'
-import type { InterviewRiskResult } from './types'
-import { RiskResultsDashboard } from './risk-results-dashboard'
+import type { CandidateEvaluation } from '@/lib/candidate-evaluations'
+import { CandidateAssessment } from './evaluator-workspace'
+import { Button } from '@/components/ui/button'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const EXT_OK = /\.(pdf|docx)$/i
@@ -51,7 +51,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-export function CandidateIntake() {
+export function CandidateIntake({ onEvaluated, onViewCandidates }: { onEvaluated: (candidate: CandidateEvaluation) => void; onViewCandidates: () => void }) {
   const [stage, setStage] = useState<'profile' | 'interview' | 'results'>('profile')
   const [profile, setProfile] = useState<Profile>(emptyProfile)
   const [parsing, setParsing] = useState(false)
@@ -62,8 +62,8 @@ export function CandidateIntake() {
   const [questions, setQuestions] = useState<string[]>([])
   const [answers, setAnswers] = useState<string[]>([])
   const [analyzing, setAnalyzing] = useState(false)
-  const [result, setResult] = useState<InterviewRiskResult | null>(null)
-  const [insufficient, setInsufficient] = useState(false)
+  const [result, setResult] = useState<CandidateEvaluation | null>(null)
+  const candidateId = useRef<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) =>
@@ -154,7 +154,7 @@ export function CandidateIntake() {
         .filter((x) => x.answer)
       if (qa.length === 0) throw new Error('Answer at least one question before analysis.')
       const res = await analyzeCandidate({
-        candidate_id: `cand-${Date.now()}`,
+        candidate_id: candidateId.current ?? (candidateId.current = crypto.randomUUID()),
         candidate_name: profile.name.trim(),
         claimed_skills: claimedSkills(),
         experience_level: profile.experienceLevel,
@@ -168,8 +168,13 @@ export function CandidateIntake() {
           .map((e) => `${e.title} at ${e.company} (${e.period}): ${e.description}`),
         interview_qa: qa,
       })
-      setResult(toRiskResult(res, profile.name, profile.role))
-      setInsufficient(res.risk_score == null)
+      const evaluation: CandidateEvaluation = {
+        id: res.candidate_id, name: profile.name.trim(), role: profile.role.trim(),
+        experienceLevel: profile.experienceLevel, skills: claimedSkills(),
+        evaluatedAt: new Date().toISOString(), answers: qa, analysis: res,
+      }
+      setResult(evaluation)
+      onEvaluated(evaluation)
       setStage('results')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Analysis failed.')
@@ -179,33 +184,18 @@ export function CandidateIntake() {
   }
 
   if (stage === 'results' && result) {
-    return (
-      <div>
-        <div className="mx-auto max-w-7xl px-4 pt-4 md:px-8">
-          <button className="text-sm text-slate-600 underline" onClick={() => setStage('profile')}>
-            ← Back to candidate profile
-          </button>
-          <p
-            role="note"
-            className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-          >
-            Gaze, audio and tab-switch signals are <strong>not evaluated</strong>: no media or browser
-            data was collected in this session. This result is based only on interview answers compared
-            with the confirmed resume claims, and is meant to support human review.
-          </p>
-          {insufficient && (
-            <p
-              role="note"
-              className="mt-3 rounded-md border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-800"
-            >
-              <strong>Insufficient evidence:</strong> there were not enough interview answers to compute a
-              risk score. The score and risk level shown below are placeholders, not an assessment.
-            </p>
-          )}
-        </div>
-        <RiskResultsDashboard result={result} />
+    return <div className="mx-auto max-w-5xl space-y-5 px-4 py-8">
+      <div className="flex flex-wrap gap-3">
+        <Button variant="interview-outline" onClick={onViewCandidates}>View all candidates</Button>
+        <Button variant="interview-outline" onClick={() => setStage('profile')}>Edit this candidate</Button>
+        <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => {
+          setProfile(emptyProfile); setResult(null); setQuestions([]); setAnswers([]);
+          setError(null); setWarnings([]); setSuccess(null); candidateId.current = null; setStage('profile')
+        }}>Add another candidate</Button>
       </div>
-    )
+      <p role="status" className="text-sm text-slate-600">Analysis saved to this session’s candidate list.</p>
+      <CandidateAssessment candidate={result} />
+    </div>
   }
 
   return (

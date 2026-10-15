@@ -1,96 +1,35 @@
-'use client'
+"use client"
 
 import { useState } from 'react'
 import Link from 'next/link'
 import { CandidateIntake } from '@/components/interview-guard/candidate-intake'
+import { EvaluatorWorkspace } from '@/components/interview-guard/evaluator-workspace'
 import { RiskResultsDashboard, sampleRiskResult } from '@/components/interview-guard'
-import { Video, FileText, BarChart3, ShieldCheck } from 'lucide-react'
+import { upsertEvaluation, type CandidateEvaluation } from '@/lib/candidate-evaluations'
+import { Video, FileText, BarChart3, ShieldCheck, Users } from 'lucide-react'
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState<'intake' | 'demo'>('intake')
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top Navigation Bar integrating Intake, Demo Dashboard, and Webcam Recorder */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="font-semibold text-slate-900">InterviewGuard AI</span>
-              <span className="ml-2 hidden rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 sm:inline">
-                Evaluation & Screening
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* View Mode Tabs */}
-            <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs font-medium">
-              <button
-                type="button"
-                onClick={() => setActiveTab('intake')}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${
-                  activeTab === 'intake'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                <span>Resume & Intake</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('demo')}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${
-                  activeTab === 'demo'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <BarChart3 className="h-3.5 w-3.5" />
-                <span>Sample Report</span>
-              </button>
-            </div>
-
-            {/* Recorder link */}
-            <Link
-              href="/interview"
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-blue-700 transition"
-            >
-              <Video className="h-3.5 w-3.5" />
-              <span>Record Interview</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main>
-        {activeTab === 'intake' ? (
-          <CandidateIntake />
-        ) : (
-          <div>
-            <div className="bg-blue-50/70 border-b border-blue-100 px-4 py-2.5 text-center text-xs text-blue-800">
-              Viewing demo risk results with sample technical evidence data.{' '}
-              <button
-                type="button"
-                onClick={() => setActiveTab('intake')}
-                className="font-semibold underline underline-offset-2 hover:text-blue-900"
-              >
-                Switch to Resume & Candidate Intake
-              </button>
-              {' '}or{' '}
-              <Link href="/interview" className="font-semibold underline underline-offset-2 hover:text-blue-900">
-                Record an interview via webcam
-              </Link>.
-            </div>
-            <RiskResultsDashboard result={sampleRiskResult} />
-          </div>
-        )}
-      </main>
-    </div>
-  )
+  const [activeTab, setActiveTab] = useState<'candidates' | 'intake' | 'demo'>('candidates')
+  const [candidates, setCandidates] = useState<CandidateEvaluation[]>([])
+  const [intakeVersion, setIntakeVersion] = useState(0)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const tabs = [
+    { id: 'candidates' as const, label: `Candidates (${candidates.length})`, icon: Users },
+    { id: 'intake' as const, label: 'Resume & intake', icon: FileText },
+    { id: 'demo' as const, label: 'Sample report', icon: BarChart3 },
+  ]
+  return <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <header className="border-b border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white"><ShieldCheck className="h-5 w-5" /></span><div><p className="font-semibold">InterviewGuard AI</p><p className="text-xs text-slate-500">Evaluator workspace</p></div></div>
+        <Link href="/interview" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-600"><Video className="h-4 w-4" />Interview studio</Link>
+      </div>
+      <nav aria-label="Evaluation navigation" className="mx-auto flex max-w-7xl flex-wrap gap-1 px-4 sm:px-6 lg:px-8">{tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-current={activeTab === id ? 'page' : undefined} onClick={() => setActiveTab(id)} className={`flex min-h-11 items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600 ${activeTab === id ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}><Icon className="h-4 w-4" />{label}</button>)}</nav>
+    </header>
+    <main>
+      {activeTab === 'candidates' && <EvaluatorWorkspace candidates={candidates} selectedId={selectedId} onSelect={setSelectedId} onAdd={() => { setIntakeVersion(value => value + 1); setActiveTab('intake') }} />}
+      <div hidden={activeTab !== 'intake'}><CandidateIntake key={intakeVersion} onEvaluated={candidate => { setCandidates(current => upsertEvaluation(current, candidate)); setSelectedId(candidate.id) }} onViewCandidates={() => setActiveTab('candidates')} /></div>
+      {activeTab === 'demo' && <><p role="note" className="border-b border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm text-blue-800">Fictional sample report. These results are separate from your candidate list and its technical review index.</p><RiskResultsDashboard result={sampleRiskResult} /></>}
+    </main>
+  </div>
 }

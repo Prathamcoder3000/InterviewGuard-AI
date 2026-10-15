@@ -1,6 +1,6 @@
 import type { InterviewRiskResult, RiskLevel } from './types'
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 export interface ParsedResume {
   name: string | null
@@ -57,7 +57,7 @@ export interface AnalyzePayload {
   interview_qa: { question: string; answer: string }[]
 }
 
-interface AnalyzeResponse {
+export interface AnalyzeResponse {
   candidate_id: string
   risk_score: number | null
   risk_level: string

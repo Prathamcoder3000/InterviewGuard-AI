@@ -5,8 +5,7 @@ import type { RefObject } from 'react'
 import { Video, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export function VideoPreview({ stream, url, playbackRef }: { stream: MediaStream | null; url: string | null; playbackRef: RefObject<HTMLVideoElement | null> }) {
-  const liveRef = useRef<HTMLVideoElement>(null)
+export function VideoPreview({ stream, url, playbackRef, liveRef }: { stream: MediaStream | null; url: string | null; playbackRef: RefObject<HTMLVideoElement | null>; liveRef: RefObject<HTMLVideoElement | null> }) {
   const resolvingDuration = useRef(false)
   const [muted, setMuted] = useState(false)
   const [playbackError, setPlaybackError] = useState('')
@@ -44,7 +43,7 @@ export function VideoPreview({ stream, url, playbackRef }: { stream: MediaStream
         </>
       )}
     </div>
-    {url && <Button variant="outline" onClick={() => setMuted(value => !value)} aria-pressed={muted}>{muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}{muted ? 'Unmute playback' : 'Mute playback'}</Button>}
+    {url && <Button variant="interview-outline" onClick={() => setMuted(value => !value)} aria-pressed={muted}>{muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}{muted ? 'Unmute playback' : 'Mute playback'}</Button>}
     {playbackError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{playbackError}</p>}
     </div>
   )

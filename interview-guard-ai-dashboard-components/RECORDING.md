@@ -50,4 +50,4 @@ The lifecycle tests use Node's built-in TypeScript stripping and browser doubles
 
 Results are embedded on the interview route to preserve the playback URL in memory. The original `/` dashboard remains available. All risk scores and events are existing demo data; they do not analyze the captured recording. Timeline seeks are a wiring demonstration only.
 
-Live preview is always muted to prevent feedback; microphone capture remains enabled. Recorded playback provides mute/unmute controls. Native encoding varies by browser (WebM or MP4). Optional face analysis, uploads, cross-page video persistence, and backend-generated evidence are deferred.
+Live preview is always muted to prevent feedback; microphone capture remains enabled. Recorded playback provides mute/unmute controls. Native encoding varies by browser (WebM or MP4). Local face analysis and consented reference-photo comparison are available separately; see FACE_ANALYSIS.md. Uploads, cross-page video persistence, and backend-generated evidence are deferred.

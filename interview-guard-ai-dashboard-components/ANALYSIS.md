@@ -18,7 +18,7 @@ Communication observations include pauses, uneven pace, unsteady delivery, and s
 
 The screenshot rules do not specify numeric weights. The MVP uses a transparent, uncalibrated review-priority index: 25 points for each of four supported negative criteria, counted once each. Positive indicators do not offset a contradiction; external assistance and communication do not affect this index. Coverage is shown alongside all criteria. No evaluated negative criteria produces no score, rather than a low-risk clearance. No automatic hiring recommendation is generated.
 
-This frontend does not determine whether a transcript actually supports a supplied finding. A reviewer or future evidence-producing backend must assess the question, answer, claimed experience, related answers and interview rules in context. Structural evidence validation is not semantic verification. No backend, model prompt, or transcript extraction pipeline exists in this repository; none was added. Local video remains unanalyzed and uses explicitly labeled fictional demo results.
+This frontend does not determine whether a transcript actually supports a supplied finding. A reviewer or future evidence-producing backend must assess the question, answer, claimed experience, related answers and interview rules in context. Structural evidence validation is not semantic verification. No backend, model prompt, or transcript extraction pipeline exists in this repository; none was added. Answer-content results still use explicitly labeled fictional demo evidence. Separately enabled local face observations and reference-photo similarity never enter this rubric.
 
 ## Verification
 

@@ -8,6 +8,8 @@ import { useInterviewRecorder } from '@/hooks/use-interview-recorder'
 import type { RecordingMetadata } from '@/types/recording'
 import { RecordingControls } from './recording-controls'
 import { VideoPreview } from './video-preview'
+import { VideoObservationPanel } from './video-observation-panel'
+import { AiInterviewer } from './ai-interviewer'
 import { RiskResultsDashboard } from './risk-results-dashboard'
 import { sampleRiskResult } from './mock-data'
 import { formatTimestamp } from './risk-utils'
@@ -18,6 +20,7 @@ export function InterviewRecorder({ onRecordingComplete }: { onRecordingComplete
   const [results, setResults] = useState(false)
   const [notice, setNotice] = useState('')
   const playbackRef = useRef<HTMLVideoElement>(null)
+  const liveRef = useRef<HTMLVideoElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const active = recorder.status === 'recording'
   function seek(timestampSec: number) {
@@ -39,18 +42,20 @@ export function InterviewRecorder({ onRecordingComplete }: { onRecordingComplete
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <section aria-labelledby="session-heading" className="min-w-0 space-y-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="session-heading" className="font-semibold">{recorder.url ? 'Review your recording' : 'Camera preview'}</h2><span className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-mono text-sm tabular-nums">{active && <span className="size-2 rounded-full bg-red-600" aria-hidden="true" />}<span>{active ? 'Recording · ' : ''}{formatTimestamp(recorder.elapsed)}</span></span></div>
-            <VideoPreview stream={recorder.stream} url={recorder.url} playbackRef={playbackRef} />
-            <div className="flex flex-wrap gap-4 text-sm text-slate-600"><span className="flex items-center gap-2"><Camera className="size-4" aria-hidden="true" />Camera: {recorder.stream ? 'on' : 'off'}</span><span className="flex items-center gap-2"><Mic className="size-4" aria-hidden="true" />Microphone: {recorder.stream ? 'on' : 'off'}</span></div>
-            {!recorder.url && <label className="flex items-start gap-3 text-sm leading-relaxed text-slate-700"><input type="checkbox" checked={consent} disabled={recorder.status !== 'idle'} onChange={e => setConsent(e.target.checked)} className="mt-1 size-4 accent-blue-600" /><span>I consent to camera and microphone capture. Recordings stay in this page’s memory until I download them or leave. No video or audio is uploaded.</span></label>}
+            <VideoPreview stream={recorder.stream} url={recorder.url} playbackRef={playbackRef} liveRef={liveRef} />
+            <div className="flex flex-wrap gap-4 text-sm text-slate-600"><span className="flex items-center gap-2"><Camera className="size-4" aria-hidden="true" />Camera: {recorder.stream ? 'on' : 'off'}</span><span className="flex items-center gap-2"><Mic className="size-4" aria-hidden="true" />Video microphone: {recorder.stream ? 'on' : 'off'}</span></div>
+            {!recorder.url && <label className="flex items-start gap-3 text-sm leading-relaxed text-slate-700"><input type="checkbox" checked={consent} disabled={recorder.status !== 'idle'} onChange={e => setConsent(e.target.checked)} className="mt-1 size-4 accent-blue-600" /><span>I consent to camera and microphone capture. Recordings stay in this page’s memory until I download them or leave. This video recording is not uploaded. Optional voice answers use separate consent below.</span></label>}
             <RecordingControls {...recorder} consent={consent} mimeType={recorder.metadata?.mimeType} retake={() => { recorder.retake(); setResults(false); setNotice('') }} />
             {recorder.error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{recorder.error}</p>}
             <p role="status" className="text-sm text-slate-600">{recorder.status === 'ready' ? 'Ready. Live preview is muted to prevent feedback; your microphone will be recorded.' : recorder.status === 'complete' ? 'Recording saved locally. Use the player controls to replay, seek, or mute/unmute playback.' : recorder.status === 'requesting' ? 'Allow both devices in your browser prompt. You can cancel while waiting.' : active ? 'Camera and microphone are recording. Stop to review.' : 'Enable your devices when you are ready.'}</p>
-            {recorder.url && <Button variant="outline" onClick={() => { setResults(true); requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ block: 'start' })) }}>Continue to demo results</Button>}
+            {recorder.url && <Button variant="interview-outline" onClick={() => { setResults(true); requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ block: 'start' })) }}>Continue to demo results</Button>}
             {notice && <p role="status" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">{notice}</p>}
+            <AiInterviewer />
           </section>
           <aside className="space-y-5">
+            <VideoObservationPanel stream={recorder.stream} videoRef={liveRef} />
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Before you start</h2><ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed text-slate-600"><li>Use a quiet space and check your camera framing.</li><li>Allow camera and microphone access, then start recording.</li><li>Speak a short test sentence. Stop and play it back to check audio.</li><li>Download the recording before leaving this page.</li></ol><p className="text-xs leading-relaxed text-slate-500">Live preview is mirrored for comfort. The saved video is not mirrored. Retake discards the current recording.</p></section>
-            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Session details</h2><dl className="space-y-3 text-sm"><div className="flex justify-between gap-3"><dt className="text-slate-500">Status</dt><dd className="capitalize">{recorder.status}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Storage</dt><dd>Local memory only</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Face observations</dt><dd>Not evaluated</dd></div>{recorder.metadata && <><div><dt className="text-slate-500">Format</dt><dd className="break-all">{recorder.metadata.mimeType}</dd></div><div className="flex justify-between"><dt className="text-slate-500">Size / duration</dt><dd>{(recorder.metadata.fileSize / 1048576).toFixed(2)} MB / {formatTimestamp(recorder.metadata.durationSec)}</dd></div><div><dt className="text-slate-500">Completed</dt><dd>{recorder.metadata.status === 'interrupted' ? 'Interrupted — review before using' : 'Complete'}</dd></div></>}</dl></section>
+            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Session details</h2><dl className="space-y-3 text-sm"><div className="flex justify-between gap-3"><dt className="text-slate-500">Status</dt><dd className="capitalize">{recorder.status}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Storage</dt><dd>Local memory only</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Face observations</dt><dd>See local analysis panel</dd></div>{recorder.metadata && <><div><dt className="text-slate-500">Format</dt><dd className="break-all">{recorder.metadata.mimeType}</dd></div><div className="flex justify-between"><dt className="text-slate-500">Size / duration</dt><dd>{(recorder.metadata.fileSize / 1048576).toFixed(2)} MB / {formatTimestamp(recorder.metadata.durationSec)}</dd></div><div><dt className="text-slate-500">Completed</dt><dd>{recorder.metadata.status === 'interrupted' ? 'Interrupted — review before using' : 'Complete'}</dd></div></>}</dl></section>
           </aside>
         </div>
       </div>
