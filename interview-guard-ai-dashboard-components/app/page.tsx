@@ -1,9 +1,9 @@
-import { RiskResultsDashboard, sampleRiskResult } from '@/components/interview-guard'
+import { CandidateIntake } from '@/components/interview-guard/candidate-intake'
 
 export default function Page() {
   return (
     <main>
-      <RiskResultsDashboard result={sampleRiskResult} />
+      <CandidateIntake />
     </main>
   )
 }

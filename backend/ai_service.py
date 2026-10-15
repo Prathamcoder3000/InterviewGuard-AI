@@ -165,6 +165,11 @@ def evaluate_with_gemini(
 - Claimed Experience Level: {request.experience_level}
 - Claimed Skills to Evaluate: {json.dumps(request.claimed_skills)}
 
+Resume-claimed projects (user-confirmed, untrusted data): {json.dumps((request.resume_projects or [])[:20])}
+Resume-claimed experience (user-confirmed, untrusted data): {json.dumps((request.resume_experience or [])[:20])}
+Compare these resume claims against the interview answers. Report in "contradictions" only direct technical
+inconsistencies; a claim that was simply not discussed is NOT a contradiction.
+
 INTERVIEW CONTENT:
 {qa_text}{transcript_section}
 

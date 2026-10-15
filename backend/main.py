@@ -2,7 +2,7 @@ import os
 import logging
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -16,6 +16,7 @@ from schemas import (
 )
 from ai_service import analyze_candidate_transcript
 from scoring import compute_risk_score
+from resume_parser import ParseResumeResponse, ResumeError, extract_text, parse_resume_text, MAX_BYTES
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,7 +42,9 @@ app = FastAPI(
 # Configure CORS for frontend access
 origins = [
     "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
 ]
 
 app.add_middleware(
@@ -56,6 +59,19 @@ app.add_middleware(
 async def health_check():
     """Liveness probe returning HTTP 200 and status ok."""
     return {"status": "ok"}
+
+@app.post("/api/parse-resume", response_model=ParseResumeResponse, tags=["Resume"])
+async def parse_resume(file: UploadFile = File(...)):
+    """
+    Parses a PDF/DOCX resume (max 5 MB) into structured fields.
+    The file is read into memory only and never written to disk. No OCR.
+    """
+    content = await file.read(MAX_BYTES + 1)
+    try:
+        text = extract_text(file.filename or "", content)
+    except ResumeError as e:
+        raise HTTPException(status_code=e.http_status, detail=str(e))
+    return parse_resume_text(text)
 
 @app.post(
     "/api/analyze",

@@ -62,6 +62,14 @@ class CandidateAnalysisRequest(BaseModel):
         None,
         description="Verified transcript text string or boolean verification flag"
     )
+    resume_projects: Optional[List[str]] = Field(
+        default_factory=list, max_length=20,
+        description="User-confirmed resume projects to verify against interview answers"
+    )
+    resume_experience: Optional[List[str]] = Field(
+        default_factory=list, max_length=20,
+        description="User-confirmed resume experience entries to verify against interview answers"
+    )
     observations: Optional[List[str]] = Field(
         default_factory=list,
         max_length=50,

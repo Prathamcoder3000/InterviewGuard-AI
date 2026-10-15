@@ -190,3 +190,86 @@ def test_ai_fallback_on_gemini_error():
     results, contradictions, follow_ups, is_insufficient = evaluate_with_gemini(sample_req, "INVALID_TEST_KEY")
     assert len(results) > 0
     assert "Gemini fallback" in results[0].evidence
+
+
+# ---------------------------------------------------------------------------
+# Resume parsing
+# ---------------------------------------------------------------------------
+import io
+
+RESUME_TEXT = (
+    "Jane Doe\njane.doe@example.com | +1 555 123 4567\nhttps://github.com/janedoe\n"
+    "Skills: Python, FastAPI, React\nCertifications\nAWS Cloud Practitioner\n"
+)
+
+
+def _docx_bytes(text: str) -> bytes:
+    import docx
+    d = docx.Document()
+    for line in text.split("\n"):
+        d.add_paragraph(line)
+    buf = io.BytesIO()
+    d.save(buf)
+    return buf.getvalue()
+
+
+def _pdf_bytes(text: str) -> bytes:
+    import pymupdf
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), text)
+    return doc.tobytes()
+
+
+def test_parse_resume_docx_mock_mode(monkeypatch):
+    monkeypatch.setenv("MOCK_AI", "true")
+    client = TestClient(app)
+    r = client.post("/api/parse-resume", files={"file": ("r.docx", _docx_bytes(RESUME_TEXT))})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["data"]["name"] == "Jane Doe"
+    assert body["data"]["email"] == "jane.doe@example.com"
+    assert "Python" in body["data"]["skills"]
+    assert body["method"] == "heuristic"
+    assert body["warnings"]
+
+
+def test_parse_resume_pdf():
+    client = TestClient(app)
+    r = client.post("/api/parse-resume", files={"file": ("r.pdf", _pdf_bytes(RESUME_TEXT))})
+    assert r.status_code == 200
+    assert r.json()["data"]["email"] == "jane.doe@example.com"
+
+
+def test_parse_resume_rejects_bad_files():
+    client = TestClient(app)
+    assert client.post("/api/parse-resume", files={"file": ("r.txt", b"hello world" * 10)}).status_code == 415
+    assert client.post("/api/parse-resume", files={"file": ("r.pdf", b"not a pdf")}).status_code == 415
+    assert client.post("/api/parse-resume", files={"file": ("r.docx", b"")}).status_code == 422
+    assert client.post("/api/parse-resume", files={"file": ("r.docx", _docx_bytes("hi"))}).status_code == 422
+    big = b"%PDF" + b"0" * (5 * 1024 * 1024 + 1)
+    assert client.post("/api/parse-resume", files={"file": ("r.pdf", big)}).status_code == 413
+
+
+def test_parse_resume_blank_pdf_is_scanned_like():
+    import pymupdf
+    doc = pymupdf.open()
+    doc.new_page()
+    client = TestClient(app)
+    r = client.post("/api/parse-resume", files={"file": ("scan.pdf", doc.tobytes())})
+    assert r.status_code == 422
+    assert "scanned" in r.json()["detail"].lower()
+
+
+def test_analyze_accepts_resume_context(monkeypatch):
+    monkeypatch.setenv("MOCK_AI", "true")
+    client = TestClient(app)
+    r = client.post("/api/analyze", json={
+        "candidate_id": "c1", "candidate_name": "Jane", "claimed_skills": ["Python"],
+        "experience_level": "mid",
+        "resume_projects": ["Chat app: realtime chat [FastAPI]"],
+        "resume_experience": ["Intern at Acme (2024)"],
+        "interview_qa": [{"question": "Python?", "answer": "I used Python async architecture in production for a pipeline."}],
+    })
+    assert r.status_code == 200
+    assert r.json()["media_analysis_status"]["status"] == "not_evaluated"
