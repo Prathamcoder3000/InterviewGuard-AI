@@ -2,10 +2,10 @@
 
 import { ShieldAlert } from 'lucide-react'
 import type { RiskLevel } from './types'
-import { cx, formatPercent, riskStyles } from './risk-utils'
+import { cx, riskStyles } from './risk-utils'
 
 interface RiskScoreGaugeProps {
-  score: number
+  score: number | null
   level: RiskLevel
   confidence: number
   modelVersion?: string
@@ -18,11 +18,10 @@ const THRESHOLDS = [35, 60, 80]
 export function RiskScoreGauge({
   score,
   level,
-  confidence,
   modelVersion,
   className,
 }: RiskScoreGaugeProps) {
-  const clamped = Math.min(100, Math.max(0, score))
+  const clamped = Math.min(100, Math.max(0, score ?? 0))
   const style = riskStyles[level]
   const offset = ARC_LENGTH * (1 - clamped / 100)
 
@@ -36,7 +35,7 @@ export function RiskScoreGauge({
     >
       <div className="flex items-center justify-between gap-2">
         <h2 id="risk-score-heading" className="text-sm font-semibold text-slate-900">
-          Overall risk score
+          Answer review priority
         </h2>
         <span
           className={cx(
@@ -47,16 +46,16 @@ export function RiskScoreGauge({
           )}
         >
           <ShieldAlert className="size-3.5" aria-hidden="true" />
-          {style.label}
+          {score === null ? 'Not evaluated' : 'Review rubric'}
         </span>
       </div>
 
-      <div className="relative mx-auto w-full max-w-64">
+      {score === null ? <p className="py-8 text-center text-lg font-semibold text-slate-600">Not evaluated</p> : <div className="relative mx-auto w-full max-w-64">
         <svg
           viewBox="0 0 200 116"
           className="w-full"
           role="img"
-          aria-label={`Risk score ${clamped} out of 100, ${style.label.toLowerCase()}`}
+          aria-label={`Answer review priority ${clamped} out of 100`}
         >
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
@@ -99,18 +98,19 @@ export function RiskScoreGauge({
           </span>
           <span className="text-xs text-slate-500">out of 100</span>
         </div>
-      </div>
+      </div>}
+      <p className="text-sm leading-relaxed text-slate-600">25 review points per supported negative answer criterion. Unassessed criteria contribute no points, so an incomplete assessment is not a clear result. This index is not a fraud probability, a deepfake score, or a hiring recommendation.</p>
 
       <dl className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm">
         <div className="flex flex-col gap-0.5">
-          <dt className="text-xs text-slate-500">Model confidence</dt>
+          <dt className="text-xs text-slate-500">Scoring scope</dt>
           <dd className="font-mono font-medium tabular-nums text-slate-900">
-            {formatPercent(confidence)}
+            Answer content only
           </dd>
         </div>
         {modelVersion && (
           <div className="flex flex-col gap-0.5">
-            <dt className="text-xs text-slate-500">Model version</dt>
+            <dt className="text-xs text-slate-500">Rubric version</dt>
             <dd className="font-mono font-medium text-slate-900">{modelVersion}</dd>
           </div>
         )}

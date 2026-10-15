@@ -21,6 +21,7 @@ interface EvidenceTimelineProps {
 }
 
 const typeIcons: Record<EvidenceType, LucideIcon> = {
+  answer: Bot,
   gaze: Eye,
   audio: Mic,
   ai_text: Bot,
@@ -60,12 +61,13 @@ export function EvidenceTimeline({
           Evidence timeline
         </h2>
         <p className="text-sm text-slate-500">
-          Every flagged moment, placed where it happened in the interview. Select a marker to
-          see the evidence.
+          Supported answer-content concerns with linked evidence. Select a marker to review
+          the context; these are not findings of dishonesty.
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
+        {sorted.length === 0 && <p className="text-sm text-slate-600">No supported answer-content events available.</p>}
         <div className="relative h-14 rounded-lg bg-slate-50 ring-1 ring-inset ring-slate-200">
           {sorted.map((event) =>
             event.durationSec ? (
@@ -117,8 +119,8 @@ export function EvidenceTimeline({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <ol className="flex flex-col gap-1 lg:col-span-2" aria-label="Flagged events">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <ol className="flex min-w-0 flex-col gap-1 lg:col-span-2" aria-label="Flagged events">
           {sorted.map((event) => {
             const Icon = typeIcons[event.type]
             const style = riskStyles[event.severity]
@@ -190,7 +192,7 @@ function EvidenceDetail({
   return (
     <article
       aria-live="polite"
-      className="flex flex-col gap-5 rounded-lg border border-slate-200 p-5 lg:col-span-3"
+      className="flex min-w-0 flex-col gap-5 rounded-lg border border-slate-200 p-5 lg:col-span-3"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -236,7 +238,7 @@ function EvidenceDetail({
       )}
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-        <div className="flex min-w-40 flex-1 flex-col gap-1.5">
+        {event.confidence !== undefined && <div className="flex min-w-40 flex-1 flex-col gap-1.5">
           <div className="flex justify-between text-xs">
             <span className="text-slate-500">Detection confidence</span>
             <span className="font-mono font-medium tabular-nums text-slate-900">
@@ -249,7 +251,7 @@ function EvidenceDetail({
               style={{ width: `${event.confidence * 100}%` }}
             />
           </div>
-        </div>
+        </div>}
         {onSeek && (
           <button
             type="button"

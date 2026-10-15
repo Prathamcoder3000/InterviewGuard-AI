@@ -4,7 +4,8 @@ import type { InterviewRiskResult, ReviewerDecisionPayload } from './types'
 import { RiskSummaryHeader } from './risk-summary-header'
 import { RiskScoreGauge } from './risk-score-gauge'
 import { AiSummaryCard } from './ai-summary-card'
-import { SignalBreakdown } from './signal-breakdown'
+import { AnalysisDimensions } from './analysis-dimensions'
+import { applyAnalysisPolicy, evaluateAnalysis } from './analysis-policy'
 import { ExplainabilityPanel } from './explainability-panel'
 import { EvidenceTimeline } from './evidence-timeline'
 import { RecommendationPanel } from './recommendation-panel'
@@ -19,12 +20,14 @@ export interface RiskResultsDashboardProps {
 }
 
 export function RiskResultsDashboard({
-  result,
+  result: suppliedResult,
   onDecision,
   onSeek,
   onExport,
   className,
 }: RiskResultsDashboardProps) {
+  const analysis = evaluateAnalysis(suppliedResult.analysisInput)
+  const result = applyAnalysisPolicy(suppliedResult)
   return (
     <div className={cx('w-full bg-slate-50 font-sans text-slate-900', className)}>
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 md:px-8 md:py-10">
@@ -33,7 +36,7 @@ export function RiskResultsDashboard({
         <div className="grid gap-6 lg:grid-cols-12">
           <RiskScoreGauge
             className="lg:col-span-4"
-            score={result.overallScore}
+            score={analysis.score}
             level={result.riskLevel}
             confidence={result.confidence}
             modelVersion={result.modelVersion}
@@ -46,15 +49,14 @@ export function RiskResultsDashboard({
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-12">
-          <SignalBreakdown className="lg:col-span-5" signals={result.signals} />
+        <AnalysisDimensions analysis={analysis} onSeek={onSeek} />
+        {analysis.score !== null && <div>
           <ExplainabilityPanel
-            className="lg:col-span-7"
             factors={result.factors}
             baseScore={result.baseScore}
             finalScore={result.overallScore}
           />
-        </div>
+        </div>}
 
         <EvidenceTimeline
           events={result.events}

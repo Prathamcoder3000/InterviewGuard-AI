@@ -68,6 +68,7 @@ export const categoryLabels: Record<SignalCategory, string> = {
 }
 
 export const evidenceTypeLabels: Record<EvidenceType, string> = {
+  answer: 'Answer-content review',
   gaze: 'Off-screen gaze',
   audio: 'Secondary voice',
   ai_text: 'AI-like answer',

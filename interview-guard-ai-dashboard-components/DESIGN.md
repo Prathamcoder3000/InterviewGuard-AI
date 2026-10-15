@@ -1,0 +1,9 @@
+# InterviewGuard UI
+
+The interview recorder extends the established results dashboard for candidates and hackathon demo users. Preserve the current enterprise visual language: slate-50 canvas, white panels, slate-200 borders, blue-600 primary actions, rounded-xl panels, system sans text and monospace timers. Existing dashboard classes and app/globals.css own runtime styling; no new global tokens are introduced.
+
+Reuse components/ui/button.tsx for actions. Keep live video as the main surface, with instructions and technical status alongside it at desktop widths and stacked on mobile. Live preview stays muted and mirrored; playback has native accessible controls and is not mirrored.
+
+Consent precedes device access. Permission requests are cancellable. Recording completion releases all devices. Retake discards local media. Recording bytes and object URLs live only in the mounted interview experience. Demo results remain explicitly separate from recording observations; no face, fraud, or identity inference is performed.
+
+Analysis uses three separate dimensions: supported positive answers, negative answer-content criteria, and possible external assistance. Communication observations have no score contribution. The review priority rubric assigns 25 points per supported negative criterion, with coverage visible and missing evidence marked Not evaluated. This is a transparent demo index, not a calibrated fraud probability or hiring recommendation. analysis-policy.ts owns the rule allowlists and display-boundary normalization. Do not trust legacy behavioral scores or turn video/voice style into emotion, honesty, identity, or competence inference.

@@ -9,7 +9,8 @@ interface RiskSummaryHeaderProps {
 
 export function RiskSummaryHeader({ result, onExport }: RiskSummaryHeaderProps) {
   const date = new Date(result.conductedAt)
-  const formattedDate = date.toLocaleString(undefined, {
+  const formattedDate = date.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -21,7 +22,7 @@ export function RiskSummaryHeader({ result, onExport }: RiskSummaryHeaderProps) 
     <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="flex flex-col gap-2">
         <p className="font-mono text-xs font-medium uppercase tracking-wider text-blue-700">
-          Risk results · {result.sessionId}
+          Interview analysis · {result.sessionId}
         </p>
         <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
           {result.candidate.name}

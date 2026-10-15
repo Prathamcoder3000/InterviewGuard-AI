@@ -4,8 +4,10 @@
   "private": true,
   "packageManager": "pnpm@12.3.4",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test hooks/use-interview-recorder.test.cjs components/interview-guard/analysis-policy.test.cjs",
     "start": "next start"
   },
   "dependencies": {

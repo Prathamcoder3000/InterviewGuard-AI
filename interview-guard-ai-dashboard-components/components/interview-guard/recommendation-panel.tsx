@@ -27,9 +27,9 @@ const actionMeta: Record<
 }
 
 const decisions: Array<{ value: ReviewerDecision; label: string; description: string }> = [
-  { value: 'confirm_flag', label: 'Confirm flag', description: 'The evidence supports the risk finding.' },
+  { value: 'confirm_flag', label: 'Record content concern', description: 'The cited answers require a targeted follow-up; this does not establish dishonesty.' },
   { value: 'escalate', label: 'Escalate', description: 'Send to the hiring committee for a second look.' },
-  { value: 'clear_candidate', label: 'Clear candidate', description: 'False positive. Remove the flag.' },
+  { value: 'clear_candidate', label: 'Resolve content concern', description: 'The follow-up or reviewed evidence resolves the concern.' },
 ]
 
 export function RecommendationPanel({

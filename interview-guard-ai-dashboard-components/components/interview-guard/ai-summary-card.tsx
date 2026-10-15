@@ -31,7 +31,7 @@ export function AiSummaryCard({ summary, signals, events, className }: AiSummary
           <Sparkles className="size-4" aria-hidden="true" />
         </span>
         <h2 id="ai-summary-heading" className="text-sm font-semibold text-slate-900">
-          AI assessment summary
+          Evidence assessment summary
         </h2>
       </div>
 
@@ -40,8 +40,8 @@ export function AiSummaryCard({ summary, signals, events, className }: AiSummary
       <div className="mt-auto flex flex-col gap-3 border-t border-slate-100 pt-4">
         <div className="flex items-center justify-between text-xs text-slate-500">
           <span>
-            {events.length} flagged events · {flaggedSignals} of {signals.length} signals above
-            threshold
+            Review items: {events.length} · Supported negative criteria: {flaggedSignals}.
+            See assessment coverage below.
           </span>
         </div>
         <div

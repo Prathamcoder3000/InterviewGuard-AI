@@ -1,4 +1,6 @@
 export { RiskResultsDashboard } from './risk-results-dashboard'
+export { InterviewRecorder } from './interview-recorder'
+export type { RecordingMetadata, RecordingStatus } from '@/types/recording'
 export type { RiskResultsDashboardProps } from './risk-results-dashboard'
 export { RiskSummaryHeader } from './risk-summary-header'
 export { RiskScoreGauge } from './risk-score-gauge'
